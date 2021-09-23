@@ -2,7 +2,7 @@
   "name": "zaioption-v1",
   "description": "Zaigar Finance Subgraph",
   "version": "1.0.0",
-  "repository": "git@github.com:zaigar-finance/zaigar-subgraph.git",
+  "repository": "git@github.com/zaigar-finance/zaigar-subgraph.git",
   "author": "Zaigar Finance",
   "license": "GPL-3.0-or-later",
   "scripts": {

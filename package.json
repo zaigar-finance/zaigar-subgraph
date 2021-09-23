@@ -1,10 +1,10 @@
 {
-  "name": "pancake-subgraph",
-  "description": "PancakeSwap Subgraph",
-  "version": "2.0.0",
+  "name": "zaigar-subgraph",
+  "description": "Zaigar Finance Subgraph",
+  "version": "1.0.0",
   "private": true,
-  "repository": "git@github.com:pancakeswap/pancake-subgraph.git",
-  "author": "PancakeSwap",
+  "repository": "git@github.com/zaigar-finance/zaigar-subgraph.git",
+  "author": "Zaigar Finance",
   "license": "GPL-3.0-or-later",
   "workspaces": [
     "subgraphs/**/*"
@@ -21,7 +21,7 @@
     "@commitlint/cli": "^13.1.0",
     "@commitlint/config-conventional": "^13.1.0",
     "@graphprotocol/graph-cli": "^0.21.0",
-    "@graphprotocol/graph-ts": "^0.20.0",
+    "@graphprotocol/graph-ts": "^0.22.0-alpha.3",
     "@typescript-eslint/eslint-plugin": "^4.31.0",
     "@typescript-eslint/parser": "^4.31.0",
     "eslint": "^7.32.0",
