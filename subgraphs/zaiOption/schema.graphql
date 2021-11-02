@@ -7,7 +7,7 @@ enum Position {
 type Market @entity {
     id: ID!
 
-    epoch: Round!
+    epoch: Round
     paused: Boolean!
 
     # Users

@@ -143,12 +143,14 @@ export function handleLockRound(event: LockRound): void {
   if (!round) {
     log.error("Tried to lock round without an existing round (epoch: {}).", [event.params.epoch.toString()]);
   }
-  round.lockAt = event.block.timestamp;
-  round.lockBlock = event.block.number;
-  round.lockHash = event.transaction.hash;
-  round.lockPrice = event.params.price.divDecimal(EIGHT_BD);
-  round.lockRoundId = event.params.roundId;
-  round.save();
+  if(round !== null){
+    round.lockAt = event.block.timestamp;
+    round.lockBlock = event.block.number;
+    round.lockHash = event.transaction.hash;
+    round.lockPrice = event.params.price.divDecimal(EIGHT_BD);
+    round.lockRoundId = event.params.roundId;
+    round.save();
+  }
 }
 
 export function handleEndRound(event: EndRound): void {
@@ -156,35 +158,40 @@ export function handleEndRound(event: EndRound): void {
   if (!round) {
     log.error("Tried to end round without an existing round (epoch: {}).", [event.params.epoch.toString()]);
   }
-  round.closeAt = event.block.timestamp;
-  round.closeBlock = event.block.number;
-  round.closeHash = event.transaction.hash;
-  round.closePrice = event.params.price.divDecimal(EIGHT_BD);
-  round.closeRoundId = event.params.roundId;
+  if(round !== null){
 
-  // Get round result based on lock/close price.
-  if (round.closePrice.equals(round.lockPrice as BigDecimal)) {
-    round.position = "House";
+    round.closeAt = event.block.timestamp;
+    round.closeBlock = event.block.number;
+    round.closeHash = event.transaction.hash;
+    round.closePrice = event.params.price.divDecimal(EIGHT_BD);
+    round.closeRoundId = event.params.roundId;
 
-    let market = Market.load("1");
-    if (!market) {
-      log.error("Tried to query market after end round was called for a round (epoch: {})", [
-        event.params.epoch.toString(),
-      ]);
-    }
-    market.totalBNBTreasury = market.totalBNBTreasury.plus(round.totalAmount);
-    market.netBNB = market.netBNB.plus(round.totalAmount);
-    market.save();
-  } else if (round.closePrice.gt(round.lockPrice as BigDecimal)) {
-    round.position = "Bull";
-  } else if (round.closePrice.lt(round.lockPrice as BigDecimal)) {
-    round.position = "Bear";
-  } else {
-    round.position = "";
+    // Get round result based on lock/close price.
+    if (round.closePrice.equals(round.lockPrice as BigDecimal)) {
+      round.position = "House";
+
+      let market = Market.load("1");
+      if (!market) {
+        log.error("Tried to query market after end round was called for a round (epoch: {})", [
+          event.params.epoch.toString(),
+        ]);
+      }
+
+      if(market !== null){
+        market.totalBNBTreasury = market.totalBNBTreasury.plus(round.totalAmount);
+        market.netBNB = market.netBNB.plus(round.totalAmount);
+        market.save();
+      }
+      
+    } else if (round.closePrice.gt(round.lockPrice as BigDecimal)) {
+      round.position = "Bull";
+    } else if (round.closePrice.lt(round.lockPrice as BigDecimal)) {
+      round.position = "Bear";
+    } 
+    round.failed = false;
+
+    round.save();
   }
-  round.failed = false;
-
-  round.save();
 }
 
 export function handleBetBull(event: BetBull): void {
@@ -192,24 +199,28 @@ export function handleBetBull(event: BetBull): void {
   if (!market) {
     log.error("Tried to query market with bet (Bull)", []);
   }
-  market.totalBets = market.totalBets.plus(ONE_BI);
-  market.totalBetsBull = market.totalBetsBull.plus(ONE_BI);
-  market.totalBNB = market.totalBNB.plus(event.params.amount.divDecimal(EIGHTEEN_BD));
-  market.totalBNBBull = market.totalBNBBull.plus(event.params.amount.divDecimal(EIGHTEEN_BD));
-  market.winRate = market.totalBetsClaimed.divDecimal(market.totalBets.toBigDecimal()).times(HUNDRED_BD);
-  market.averageBNB = market.totalBNB.div(market.totalBets.toBigDecimal());
-  market.netBNB = market.netBNB.minus(event.params.amount.divDecimal(EIGHTEEN_BD));
-  market.save();
+  if(market !== null){
+    market.totalBets = market.totalBets.plus(ONE_BI);
+    market.totalBetsBull = market.totalBetsBull.plus(ONE_BI);
+    market.totalBNB = market.totalBNB.plus(event.params.amount.divDecimal(EIGHTEEN_BD));
+    market.totalBNBBull = market.totalBNBBull.plus(event.params.amount.divDecimal(EIGHTEEN_BD));
+    market.winRate = market.totalBetsClaimed.divDecimal(market.totalBets.toBigDecimal()).times(HUNDRED_BD);
+    market.averageBNB = market.totalBNB.div(market.totalBets.toBigDecimal());
+    market.netBNB = market.netBNB.minus(event.params.amount.divDecimal(EIGHTEEN_BD));
+    market.save();
+  }
 
   let round = Round.load(event.params.epoch.toString());
   if (!round) {
     log.error("Tried to bet (bull) without an existing round (epoch: {}).", [event.params.epoch.toString()]);
   }
-  round.totalBets = round.totalBets.plus(ONE_BI);
-  round.totalAmount = round.totalAmount.plus(event.params.amount.divDecimal(EIGHTEEN_BD));
-  round.bullBets = round.bullBets.plus(ONE_BI);
-  round.bullAmount = round.bullAmount.plus(event.params.amount.divDecimal(EIGHTEEN_BD));
-  round.save();
+  if(round !== null){
+    round.totalBets = round.totalBets.plus(ONE_BI);
+    round.totalAmount = round.totalAmount.plus(event.params.amount.divDecimal(EIGHTEEN_BD));
+    round.bullBets = round.bullBets.plus(ONE_BI);
+    round.bullAmount = round.bullAmount.plus(event.params.amount.divDecimal(EIGHTEEN_BD));
+    round.save();
+  }
 
   // Fail safe condition in case the user has not been created yet.
   let user = User.load(event.params.sender.toHex());
@@ -230,8 +241,10 @@ export function handleBetBull(event: BetBull): void {
     user.averageBNB = ZERO_BD;
     user.netBNB = ZERO_BD;
 
-    market.totalUsers = market.totalUsers.plus(ONE_BI);
-    market.save();
+    if(market !== null){
+      market.totalUsers = market.totalUsers.plus(ONE_BI);
+      market.save();
+    }
   }
   user.updatedAt = event.block.timestamp;
   user.totalBets = user.totalBets.plus(ONE_BI);
@@ -245,16 +258,18 @@ export function handleBetBull(event: BetBull): void {
 
   let betId = concat(event.params.sender, Bytes.fromI32(event.params.epoch.toI32())).toHex();
   let bet = new Bet(betId);
-  bet.round = round.id;
-  bet.user = user.id;
-  bet.hash = event.transaction.hash;
-  bet.amount = event.params.amount.divDecimal(EIGHTEEN_BD);
-  bet.position = "Bull";
-  bet.claimed = false;
-  bet.createdAt = event.block.timestamp;
-  bet.updatedAt = event.block.timestamp;
-  bet.block = event.block.number;
-  bet.save();
+  if(round !== null){
+    bet.round = round.id;
+    bet.user = user.id;
+    bet.hash = event.transaction.hash;
+    bet.amount = event.params.amount.divDecimal(EIGHTEEN_BD);
+    bet.position = "Bull";
+    bet.claimed = false;
+    bet.createdAt = event.block.timestamp;
+    bet.updatedAt = event.block.timestamp;
+    bet.block = event.block.number;
+    bet.save();
+  }
 }
 
 export function handleBetBear(event: BetBear): void {
@@ -262,24 +277,28 @@ export function handleBetBear(event: BetBear): void {
   if (!market) {
     log.error("Tried to query market with bet (Bear)", []);
   }
-  market.totalBets = market.totalBets.plus(ONE_BI);
-  market.totalBetsBear = market.totalBetsBear.plus(ONE_BI);
-  market.totalBNB = market.totalBNB.plus(event.params.amount.divDecimal(EIGHTEEN_BD));
-  market.totalBNBBear = market.totalBNBBear.plus(event.params.amount.divDecimal(EIGHTEEN_BD));
-  market.winRate = market.totalBetsClaimed.divDecimal(market.totalBets.toBigDecimal()).times(HUNDRED_BD);
-  market.averageBNB = market.totalBNB.div(market.totalBets.toBigDecimal());
-  market.netBNB = market.netBNB.minus(event.params.amount.divDecimal(EIGHTEEN_BD));
-  market.save();
+  if(market !== null){
+    market.totalBets = market.totalBets.plus(ONE_BI);
+    market.totalBetsBear = market.totalBetsBear.plus(ONE_BI);
+    market.totalBNB = market.totalBNB.plus(event.params.amount.divDecimal(EIGHTEEN_BD));
+    market.totalBNBBear = market.totalBNBBear.plus(event.params.amount.divDecimal(EIGHTEEN_BD));
+    market.winRate = market.totalBetsClaimed.divDecimal(market.totalBets.toBigDecimal()).times(HUNDRED_BD);
+    market.averageBNB = market.totalBNB.div(market.totalBets.toBigDecimal());
+    market.netBNB = market.netBNB.minus(event.params.amount.divDecimal(EIGHTEEN_BD));
+    market.save();
+  }
 
   let round = Round.load(event.params.epoch.toString());
   if (!round) {
     log.error("Tried to bet (bear) without an existing round (epoch: {}).", [event.params.epoch.toString()]);
   }
-  round.totalBets = round.totalBets.plus(ONE_BI);
-  round.totalAmount = round.totalAmount.plus(event.params.amount.divDecimal(EIGHTEEN_BD));
-  round.bearBets = round.bearBets.plus(ONE_BI);
-  round.bearAmount = round.bearAmount.plus(event.params.amount.divDecimal(EIGHTEEN_BD));
-  round.save();
+  if(round !== null){
+    round.totalBets = round.totalBets.plus(ONE_BI);
+    round.totalAmount = round.totalAmount.plus(event.params.amount.divDecimal(EIGHTEEN_BD));
+    round.bearBets = round.bearBets.plus(ONE_BI);
+    round.bearAmount = round.bearAmount.plus(event.params.amount.divDecimal(EIGHTEEN_BD));
+    round.save();
+  }
 
   // Fail safe condition in case the user has not been created yet.
   let user = User.load(event.params.sender.toHex());
@@ -299,9 +318,11 @@ export function handleBetBear(event: BetBear): void {
     user.winRate = HUNDRED_BD;
     user.averageBNB = ZERO_BD;
     user.netBNB = ZERO_BD;
-
-    market.totalUsers = market.totalUsers.plus(ONE_BI);
-    market.save();
+ 
+    if(market !== null){
+      market.totalUsers = market.totalUsers.plus(ONE_BI);
+      market.save();
+    }
   }
   user.updatedAt = event.block.timestamp;
   user.totalBets = user.totalBets.plus(ONE_BI);
@@ -315,7 +336,9 @@ export function handleBetBear(event: BetBear): void {
 
   let betId = concat(event.params.sender, Bytes.fromI32(event.params.epoch.toI32())).toHex();
   let bet = new Bet(betId);
-  bet.round = round.id;
+  if(round !== null){
+    bet.round = round.id;
+  }
   bet.user = user.id;
   bet.hash = event.transaction.hash;
   bet.amount = event.params.amount.divDecimal(EIGHTEEN_BD);
@@ -333,34 +356,40 @@ export function handleClaim(event: Claim): void {
   if (!bet) {
     log.error("Tried to query bet without an existing ID (betId: {})", [betId]);
   }
-  bet.claimed = true;
-  bet.claimedAt = event.block.timestamp;
-  bet.claimedBlock = event.block.number;
-  bet.claimedHash = event.transaction.hash;
-  bet.claimedBNB = event.params.amount.divDecimal(EIGHTEEN_BD);
-  bet.claimedNetBNB = event.params.amount.divDecimal(EIGHTEEN_BD).minus(bet.amount);
-  bet.updatedAt = event.block.timestamp;
-  bet.save();
+  if(bet !== null){
+    bet.claimed = true;
+    bet.claimedAt = event.block.timestamp;
+    bet.claimedBlock = event.block.number;
+    bet.claimedHash = event.transaction.hash;
+    bet.claimedBNB = event.params.amount.divDecimal(EIGHTEEN_BD);
+    bet.claimedNetBNB = event.params.amount.divDecimal(EIGHTEEN_BD).minus(bet.amount);
+    bet.updatedAt = event.block.timestamp;
+    bet.save();
+  }
 
   let user = User.load(event.params.sender.toHex());
   if (!user) {
     log.error("Tried to query user without an existing ID (address: {})", [event.params.sender.toHex()]);
   }
-  user.totalBetsClaimed = user.totalBetsClaimed.plus(ONE_BI);
-  user.totalBNBClaimed = user.totalBNBClaimed.plus(event.params.amount.divDecimal(EIGHTEEN_BD));
-  user.winRate = user.totalBetsClaimed.divDecimal(user.totalBets.toBigDecimal()).times(HUNDRED_BD);
-  user.netBNB = user.netBNB.plus(event.params.amount.divDecimal(EIGHTEEN_BD));
-  user.save();
+  if(user !== null){
+    user.totalBetsClaimed = user.totalBetsClaimed.plus(ONE_BI);
+    user.totalBNBClaimed = user.totalBNBClaimed.plus(event.params.amount.divDecimal(EIGHTEEN_BD));
+    user.winRate = user.totalBetsClaimed.divDecimal(user.totalBets.toBigDecimal()).times(HUNDRED_BD);
+    user.netBNB = user.netBNB.plus(event.params.amount.divDecimal(EIGHTEEN_BD));
+    user.save();
+  }
 
   let market = Market.load("1");
   if (!market) {
     log.error("Tried to query market after a user claimed for a round (epoch: {})", [event.params.epoch.toString()]);
   }
-  market.totalBetsClaimed = market.totalBetsClaimed.plus(ONE_BI);
-  market.totalBNBClaimed = market.totalBNBClaimed.plus(event.params.amount.divDecimal(EIGHTEEN_BD));
-  market.winRate = market.totalBetsClaimed.divDecimal(market.totalBets.toBigDecimal()).times(HUNDRED_BD);
-  market.netBNB = market.netBNB.plus(event.params.amount.divDecimal(EIGHTEEN_BD));
-  market.save();
+  if(market !== null){
+    market.totalBetsClaimed = market.totalBetsClaimed.plus(ONE_BI);
+    market.totalBNBClaimed = market.totalBNBClaimed.plus(event.params.amount.divDecimal(EIGHTEEN_BD));
+    market.winRate = market.totalBetsClaimed.divDecimal(market.totalBets.toBigDecimal()).times(HUNDRED_BD);
+    market.netBNB = market.netBNB.plus(event.params.amount.divDecimal(EIGHTEEN_BD));
+    market.save();
+  }
 }
 
 export function handleRewardsCalculated(event: RewardsCalculated): void {
@@ -370,6 +399,8 @@ export function handleRewardsCalculated(event: RewardsCalculated): void {
       event.params.epoch.toString(),
     ]);
   }
-  market.totalBNBTreasury = market.totalBNBTreasury.plus(event.params.treasuryAmount.divDecimal(EIGHTEEN_BD));
-  market.save();
+  if(market !== null){
+    market.totalBNBTreasury = market.totalBNBTreasury.plus(event.params.treasuryAmount.divDecimal(EIGHTEEN_BD));
+    market.save();
+  }
 }
