@@ -34,8 +34,8 @@ type Round @entity {
     id: ID!
 
     epoch: BigInt!
-    position: Position!
-    failed: Boolean!
+    position: Position
+    failed: Boolean
 
     previous: Round!
 
@@ -45,18 +45,18 @@ type Round @entity {
     startHash: Bytes!
 
     # Lock
-    lockAt: BigInt!
-    lockBlock: BigInt!
-    lockHash: Bytes!
-    lockPrice: BigDecimal!
-    lockRoundId: BigInt!
+    lockAt: BigInt
+    lockBlock: BigInt
+    lockHash: Bytes
+    lockPrice: BigDecimal
+    lockRoundId: BigInt
 
     # End
-    closeAt: BigInt!
-    closeBlock: BigInt!
-    closeHash: Bytes!
+    closeAt: BigInt
+    closeBlock: BigInt
+    closeHash: Bytes
     closePrice: BigDecimal!
-    closeRoundId: BigInt!
+    closeRoundId: BigInt
 
     # Bets
     totalBets: BigInt!
@@ -106,11 +106,11 @@ type Bet @entity {
     position: Position!
 
     claimed: Boolean!
-    claimedAt: BigInt!
-    claimedBlock: BigInt!
-    claimedHash: Bytes!
-    claimedBNB: BigDecimal!
-    claimedNetBNB: BigDecimal!
+    claimedAt: BigInt
+    claimedBlock: BigInt
+    claimedHash: Bytes
+    claimedBNB: BigDecimal
+    claimedNetBNB: BigDecimal
 
     createdAt: BigInt!
     updatedAt: BigInt!

@@ -57,12 +57,13 @@ export function handlePause(event: Pause): void {
     round.save();
 
     // Also fail the previous round because it will not complete.
-    let previousRound = Round.load(round.previous);
-
+   let previousRound = Round.load(round.previous);
+    
     if (previousRound !== null) {
       previousRound.failed = true;
       previousRound.save();
     }
+   
   }
 }
 
