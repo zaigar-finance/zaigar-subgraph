@@ -27,7 +27,7 @@ let EIGHTEEN_BD = BigDecimal.fromString("1e18");
 
 export function handlePause(event: Pause): void {
   let market = Market.load("1");
-  if (!market) {
+  if (market === null) {
     market = new Market("1");
     market.epoch = event.params.epoch.toString();
     market.paused = true;
@@ -58,7 +58,6 @@ export function handlePause(event: Pause): void {
 
     // Also fail the previous round because it will not complete.
     let previousRound = Round.load(round.previous);
-
     if (previousRound !== null) {
       previousRound.failed = true;
       previousRound.save();
@@ -68,7 +67,7 @@ export function handlePause(event: Pause): void {
 
 export function handleUnpause(event: Unpause): void {
   let market = Market.load("1");
-  if (!market) {
+  if (market === null) {
     market = new Market("1");
     market.epoch = event.params.epoch.toString();
     market.paused = false;
@@ -98,7 +97,7 @@ export function handleUnpause(event: Unpause): void {
 
 export function handleStartRound(event: StartRound): void {
   let market = Market.load("1");
-  if (!market) {
+  if (market === null) {
     market = new Market("1");
     market.epoch = event.params.epoch.toString();
     market.paused = false;
@@ -121,10 +120,10 @@ export function handleStartRound(event: StartRound): void {
   market.save();
 
   let round = Round.load(event.params.epoch.toString());
-  if (!round) {
+  if (round === null) {
     round = new Round(event.params.epoch.toString());
     round.epoch = event.params.epoch;
-    round.previous = event.params.epoch.equals(ZERO_BI) ? "" : event.params.epoch.minus(ONE_BI).toString();
+    round.previous = event.params.epoch.equals(ZERO_BI) ? null : event.params.epoch.minus(ONE_BI).toString();
     round.startAt = event.block.timestamp;
     round.startBlock = event.block.number;
     round.startHash = event.transaction.hash;
@@ -140,7 +139,7 @@ export function handleStartRound(event: StartRound): void {
 
 export function handleLockRound(event: LockRound): void {
   let round = Round.load(event.params.epoch.toString());
-  if (!round) {
+  if (round === null) {
     log.error("Tried to lock round without an existing round (epoch: {}).", [event.params.epoch.toString()]);
   }
   round.lockAt = event.block.timestamp;
@@ -153,7 +152,7 @@ export function handleLockRound(event: LockRound): void {
 
 export function handleEndRound(event: EndRound): void {
   let round = Round.load(event.params.epoch.toString());
-  if (!round) {
+  if (round === null) {
     log.error("Tried to end round without an existing round (epoch: {}).", [event.params.epoch.toString()]);
   }
   round.closeAt = event.block.timestamp;
@@ -167,7 +166,7 @@ export function handleEndRound(event: EndRound): void {
     round.position = "House";
 
     let market = Market.load("1");
-    if (!market) {
+    if (market === null) {
       log.error("Tried to query market after end round was called for a round (epoch: {})", [
         event.params.epoch.toString(),
       ]);
@@ -180,7 +179,7 @@ export function handleEndRound(event: EndRound): void {
   } else if (round.closePrice.lt(round.lockPrice as BigDecimal)) {
     round.position = "Bear";
   } else {
-    round.position = "";
+    round.position = null;
   }
   round.failed = false;
 
@@ -189,7 +188,7 @@ export function handleEndRound(event: EndRound): void {
 
 export function handleBetBull(event: BetBull): void {
   let market = Market.load("1");
-  if (!market) {
+  if (market === null) {
     log.error("Tried to query market with bet (Bull)", []);
   }
   market.totalBets = market.totalBets.plus(ONE_BI);
@@ -202,7 +201,7 @@ export function handleBetBull(event: BetBull): void {
   market.save();
 
   let round = Round.load(event.params.epoch.toString());
-  if (!round) {
+  if (round === null) {
     log.error("Tried to bet (bull) without an existing round (epoch: {}).", [event.params.epoch.toString()]);
   }
   round.totalBets = round.totalBets.plus(ONE_BI);
@@ -213,7 +212,7 @@ export function handleBetBull(event: BetBull): void {
 
   // Fail safe condition in case the user has not been created yet.
   let user = User.load(event.params.sender.toHex());
-  if (!user) {
+  if (user === null) {
     user = new User(event.params.sender.toHex());
     user.createdAt = event.block.timestamp;
     user.updatedAt = event.block.timestamp;
@@ -259,7 +258,7 @@ export function handleBetBull(event: BetBull): void {
 
 export function handleBetBear(event: BetBear): void {
   let market = Market.load("1");
-  if (!market) {
+  if (market === null) {
     log.error("Tried to query market with bet (Bear)", []);
   }
   market.totalBets = market.totalBets.plus(ONE_BI);
@@ -272,7 +271,7 @@ export function handleBetBear(event: BetBear): void {
   market.save();
 
   let round = Round.load(event.params.epoch.toString());
-  if (!round) {
+  if (round === null) {
     log.error("Tried to bet (bear) without an existing round (epoch: {}).", [event.params.epoch.toString()]);
   }
   round.totalBets = round.totalBets.plus(ONE_BI);
@@ -283,7 +282,7 @@ export function handleBetBear(event: BetBear): void {
 
   // Fail safe condition in case the user has not been created yet.
   let user = User.load(event.params.sender.toHex());
-  if (!user) {
+  if (user === null) {
     user = new User(event.params.sender.toHex());
     user.createdAt = event.block.timestamp;
     user.updatedAt = event.block.timestamp;
@@ -330,7 +329,7 @@ export function handleBetBear(event: BetBear): void {
 export function handleClaim(event: Claim): void {
   let betId = concat(event.params.sender, Bytes.fromI32(event.params.epoch.toI32())).toHex();
   let bet = Bet.load(betId);
-  if (!bet) {
+  if (bet === null) {
     log.error("Tried to query bet without an existing ID (betId: {})", [betId]);
   }
   bet.claimed = true;
@@ -343,7 +342,7 @@ export function handleClaim(event: Claim): void {
   bet.save();
 
   let user = User.load(event.params.sender.toHex());
-  if (!user) {
+  if (user === null) {
     log.error("Tried to query user without an existing ID (address: {})", [event.params.sender.toHex()]);
   }
   user.totalBetsClaimed = user.totalBetsClaimed.plus(ONE_BI);
@@ -353,7 +352,7 @@ export function handleClaim(event: Claim): void {
   user.save();
 
   let market = Market.load("1");
-  if (!market) {
+  if (market === null) {
     log.error("Tried to query market after a user claimed for a round (epoch: {})", [event.params.epoch.toString()]);
   }
   market.totalBetsClaimed = market.totalBetsClaimed.plus(ONE_BI);
@@ -365,7 +364,7 @@ export function handleClaim(event: Claim): void {
 
 export function handleRewardsCalculated(event: RewardsCalculated): void {
   let market = Market.load("1");
-  if (!market) {
+  if (market === null) {
     log.error("Tried to query market after rewards were calculated for a round (epoch: {})", [
       event.params.epoch.toString(),
     ]);

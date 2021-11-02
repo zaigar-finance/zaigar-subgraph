@@ -5,7 +5,7 @@ TheGraph exposes a GraphQL endpoint to query the events and entities within the 
 Currently, there are zai Option subgraph, but additional subgraphs can be added to this repo:
 
 
-9. **[ZaiOption](https://thegraph.com/legacy-explorer/subgraph/pancakeswap/prediction-v2)**: Tracks all Zaigar Finance zaiOption with market, rounds, and bets.
+1. **[ZaiOption]()**: Tracks all Zaigar Finance zaiOption with market, rounds, and bets.
 
 
 ## To setup and deploy
